@@ -12,6 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"go-jwt/src/database"
+	helper "go-jwt/src/helpers"
 	"go-jwt/src/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -81,7 +82,7 @@ func SignUp() gin.HandlerFunc {
 		user.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		user.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
-		token, refreshToken, _ := helper.GenerateAllTokens(*user.Email, *user.First_name, *user.Last_name, user.User_id)
+		token, refreshToken, _ := helper.GenerateAllTokens(*user.Email)
 		user.Token = &token
 		user.Refresh_token = &refreshToken
 
@@ -124,9 +125,9 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, foundUser.User_id)
+		token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email)
 
-		helper.UpdateAllTokens(token, refreshToken, foundUser.User_id)
+		helper.UpdateAllTokens(token, refreshToken)
 
 		c.JSON(http.StatusOK, foundUser)
 
