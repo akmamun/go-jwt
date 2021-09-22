@@ -59,7 +59,7 @@ func SignUp() gin.HandlerFunc {
 
 		validationErr := validate.Struct(user)
 		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "data": nil, "message": validationErr.Error()})
 			return
 		}
 
@@ -67,7 +67,9 @@ func SignUp() gin.HandlerFunc {
 		defer cancel()
 		if err != nil {
 			log.Panic(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while checking for the email"})
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"success": false, "data": nil, "message": "error occured while checking for the email"})
+
 			return
 		}
 
@@ -75,7 +77,9 @@ func SignUp() gin.HandlerFunc {
 		user.Password = &password
 
 		if count > 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "this email ready exists"})
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"success": false, "data": nil, "message": "email ready exists"})
+
 			return
 		}
 
@@ -86,15 +90,17 @@ func SignUp() gin.HandlerFunc {
 		user.Token = &token
 		user.Refresh_token = &refreshToken
 
-		resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, user)
+		insertErr, _ := userCollection.InsertOne(ctx, user)
 		if insertErr != nil {
 			msg := fmt.Sprintf("User item was not created")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"success": false, "data": nil, "message": msg})
+
 			return
 		}
 		defer cancel()
 
-		c.JSON(http.StatusOK, resultInsertionNumber)
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": nil, "message": "user signup sucess"})
 
 	}
 }
@@ -125,11 +131,24 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
+		if foundUser.Email == nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+			return
+		}
 		token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email)
 
-		helper.UpdateAllTokens(token, refreshToken)
+		helper.UpdateAllTokens(token, refreshToken, *foundUser.Email)
+		err = userCollection.FindOne(ctx, bson.M{"email": foundUser.Email}).Decode(&foundUser)
 
-		c.JSON(http.StatusOK, foundUser)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{
+			"token":         foundUser.Token,
+			"refresh_token": foundUser.Refresh_token},
+			"message": "return successfully"})
 
 	}
 }
