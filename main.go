@@ -16,6 +16,7 @@ func main() {
 	if port == "" {
 		port = "8000"
 	}
+	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.New()
 	router.Use(gin.Logger())
