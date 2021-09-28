@@ -6,6 +6,9 @@
 ### Lets Run
 - `go run src/server.go` or `go build src/server.go` and run `./server`
 - The application should be available and running on localhost:8000
+### Docker Run
+- Docker build `docker build . -t server`
+- Docker Run `docker run -p 8000:8000 -it server`
 
 
 
